@@ -1,6 +1,7 @@
 import React,{useState,useEffect} from 'react';
 import styled from 'styled-components';
-import {Table,Button,Modal,Input,Form} from 'antd';
+import { Table, Button, Input, Form, Modal } from 'antd';
+import ModalPopup from '../../Components/Modal';
 import {EditOutlined,DeleteOutlined} from '@ant-design/icons'
 
 const employees =
@@ -41,34 +42,7 @@ const employees =
         age : 9
     },
 ]
-const columns = [
-    {
-        key: 'id',
-        title : 'Id',
-        dataIndex :'id'
-    },
-    {
-        key: 'name',
-        title : 'Name',
-        dataIndex :'name'
-    },
-    {
-        key: 'age',
-        title : 'Age',
-        dataIndex :'age'
-    },
-    {
-        key :'action',
-        title : 'Action',
-        render : (record)=>
-        {
-            return<>
-            <EditOutlined/>
-            <DeleteOutlined style={{color : "orange",marginLeft : 12}}/>
-            </>
-        }
-    }
-]
+
 
 const Wrapper = styled.div`
     width: 100%;
@@ -77,31 +51,69 @@ const Wrapper = styled.div`
 
 `
 const ListEmployee = () => {
-    const [isEdit,setEdit] = useState(false);
-    const [isCreate,setCreate] = useState(false);
+    const [isOpenModal,setIsOpenModal] = useState(false);
     const [employee,setemployee] = useState([]);
+    const [employeeEdit,setEmployeeEdit] = useState({});
     useEffect(() => {
-        const temp = JSON.parse(localStorage.getItem('data'));
-        if(temp)
+        const res = JSON.parse(localStorage.getItem('data'));
+        if(res)
         {
-            setemployee(temp);
+            setemployee(res);
         }
         else
         {
-            setemployee(employee);
-            
+            setemployee(employees);           
         }
-    },employee);
+    },[employee]);
     // useEffect(() => {
     //     localStorage.setItem('data',JSON.stringify(employee));
     // }, []);
     
-
+    const columns = [
+        {
+            key: 'id',
+            title : 'Id',
+            dataIndex :'id'
+        },
+        {
+            key: 'name',
+            title : 'Name',
+            dataIndex :'name'
+        },
+        {
+            key: 'age',
+            title : 'Age',
+            dataIndex :'age'
+        },
+        {
+            key :'action',
+            title : 'Action',
+            render : (record)=>
+            {
+                return<>
+                <EditOutlined onClick={()=>{showModal(record)}} />
+                <DeleteOutlined onClick={()=>handleDeleteEmployee(record.id)} style={{color : "orange",marginLeft : 12}}/>
+                </>
+            }
+        }
+    ]
+    
     const handleDeleteEmployee = (id) =>{
-        const temp = [...employee]
-
-        const new_data = temp.filter((item)=>item.id !== id)
-        setemployee(new_data)
+        Modal.confirm(
+            {
+                title :"Are u sure?",
+                okText :'Sure',
+                okType : 'danger',
+                onOk : ()=>
+                {
+                    const temp = [...employee]
+                    const new_data = temp.filter((item)=>item.id !== id)
+                    localStorage.setItem('data',JSON.stringify(new_data));
+                    setemployee(new_data)
+                }
+            }
+        )
+        
     }
     const handleEditEmployee = (item) =>
     {
@@ -115,16 +127,20 @@ const ListEmployee = () => {
             }
         })
         setemployee(data);
+        localStorage.setItem('data',JSON.stringify(data));
 
     }
+    //edit employee
     // tạo modal create cho employee
-    const showModalCreate = ()=>
+    
+    const showModal = (record)=>
     {
-        setCreate(true);
+        setIsOpenModal(true);
+        setEmployeeEdit(record);
     }
-    const onCancelCreate = ()=>
+    const offModal = ()=>
     {
-        setCreate(false);
+        setIsOpenModal(false);
     }
     
     const handleCreateEmployee =(values) =>{
@@ -134,35 +150,32 @@ const ListEmployee = () => {
             name : values.name,
             age : values.age
         }
-        const temp = [...employee,newEmployee]   
-        localStorage.setItem('data',JSON.stringify(employees));
+        const temp = [...employee]
+        temp.push(newEmployee);
+        localStorage.setItem('data',JSON.stringify(temp));
         setemployee(temp);
-        setCreate(false);
+        
     }
-    const onCreateFail = (errorInfo) => {
-        console.log('Failed:', errorInfo);
-      };
+    const handleFinish = (values) =>{
+       const isEdit = employee.find((item) => item.id = values.id)
+        if(isEdit)
+        {
+            handleEditEmployee(values);
+        }
+        else
+        {
+            handleCreateEmployee(values);
+        }
+        setIsOpenModal(false)
+    }
+
     return (
         <Wrapper>
-            <Button onClick={showModalCreate}>Create Employee</Button>
-                <Modal open={isCreate} title = "Create Employee" onCancel={onCancelCreate}>
-                    {/* Input Employee */}
-                    <Form name='Create Employee' labelCol={{ span: 4 }} wrapperCol={{ span: 16 }} onFinish={handleCreateEmployee} onFinishFailed={onCreateFail}>
-                        <Form.Item label='Id' name='id' rules={[{required : true,message:'Zui lòng nhập Id cho pé!'}]}>
-                            <Input/>
-                        </Form.Item>
-                        <Form.Item label='Name' name='name' rules={[{required : true,message:'Zui lòng nhập tơn cho pé!'}]}>
-                            <Input/>
-                        </Form.Item>
-                        <Form.Item label='Age' name='age' rules={[{required : true,message:'Zui lòng nhập tủi cho pé!'}]}>
-                            <Input/>
-                        </Form.Item>
-                        <Button htmlType='submit'>
-                            Save
-                        </Button>
-                    </Form>
-                </Modal>
-            
+            <Button onClick={showModal}>Create Employee</Button>
+                {
+                    isOpenModal && <ModalPopup isCreate={isOpenModal} item={employeeEdit} title = "edwq" onCancel={offModal} onFinish={handleFinish}>
+                    </ModalPopup>
+                }
             <Table
             columns={columns}
             dataSource={employee}
