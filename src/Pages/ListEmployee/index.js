@@ -1,6 +1,6 @@
 import React,{useState,useEffect} from 'react';
 import styled from 'styled-components';
-import { Table, Button, Input, Form, Modal } from 'antd';
+import { Table, Button, Modal } from 'antd';
 import ModalPopup from '../../Components/Modal';
 import {EditOutlined,DeleteOutlined} from '@ant-design/icons'
 
